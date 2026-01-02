@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::path::Path;
-use std::time::SystemTime;
+use std::sync::Mutex;
 
 use clap::Parser;
 use chrono::{DateTime, Local, Utc};
@@ -49,9 +48,9 @@ struct ExtensionStats {
 fn main() {
     let cli = Cli::parse();
 
-    let mut stats: HashMap<String, ExtensionStats> = HashMap::new();
+    let stats = Mutex::new(HashMap::new());
 
-    let walker = Walk::new(&cli.target).parallel();
+    let walker = Walk::new(&cli.target);
     let entries: Vec<_> = walker
         .filter_map(Result::ok)
         .filter(|entry| entry.file_type().map_or(false, |ft| ft.is_file()))
@@ -61,16 +60,17 @@ fn main() {
         entries.par_iter().for_each(|entry| {
             if let Some(file_ext) = entry.path().extension() {
                 if file_ext.to_string_lossy().to_lowercase() == ext.to_lowercase() {
-                    process_file(entry, &mut stats);
+                    process_file(entry, &stats);
                 }
             }
         });
     } else {
         entries.par_iter().for_each(|entry| {
-            process_file(entry, &mut stats);
+            process_file(entry, &stats);
         });
     }
 
+    let stats = stats.into_inner().unwrap();
     let mut results: Vec<ExtensionStats> = stats.into_values().collect();
 
     match cli.sort_by.unwrap_or(SortBy::Count) {
@@ -91,7 +91,7 @@ fn main() {
     }
 }
 
-fn process_file(entry: &ignore::DirEntry, stats: &mut HashMap<String, ExtensionStats>) {
+fn process_file(entry: &ignore::DirEntry, stats: &Mutex<HashMap<String, ExtensionStats>>) {
     let path = entry.path();
 
     let ext = path
@@ -108,6 +108,7 @@ fn process_file(entry: &ignore::DirEntry, stats: &mut HashMap<String, ExtensionS
     let size = metadata.len();
     let modified = metadata.modified().ok();
 
+    let mut stats = stats.lock().unwrap();
     let entry_stats = stats.entry(ext.clone()).or_insert_with(|| ExtensionStats {
         extension: ext.clone(),
         count: 0,

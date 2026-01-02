@@ -9,7 +9,7 @@ use ignore::Walk;
 use rayon::prelude::*;
 
 #[derive(Parser, Debug)]
-#[command(name = "findsion")]
+#[command(name = "scout")]
 #[command(about = "Blazing fast extension counter and file analyzer", long_about = None)]
 struct Cli {
     #[arg(short, long)]
@@ -141,7 +141,7 @@ fn print_results(results: &[ExtensionStats], detailed: bool) {
     );
     println!(
         "{}",
-        "│  FINDSION - Fast Extension Analyzer                              │"
+        "│  SCOUT - Fast Extension Analyzer                                 │"
             .bright_cyan()
             .bold()
     );

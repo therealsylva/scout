@@ -1,0 +1,29 @@
+[package]
+name = "findsion"
+version = "0.2.0"
+edition = "2021"
+
+[dependencies]
+# High-performance parallel iteration
+rayon = "1.8"
+
+# Blazing fast directory traversal (used by ripgrep/fd)
+ignore = "0.4"
+
+# CLI
+clap = { version = "4.4", features = ["derive"] }
+colored = "2.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Time
+chrono = "0.4"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+panic = "abort"
+strip = true
